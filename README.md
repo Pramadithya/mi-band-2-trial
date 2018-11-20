@@ -24,3 +24,9 @@ Control Characteristic: 00002a39-0000-1000-8000-00805f9b34fb
 Descriptor: 00002902-0000-1000-8000-00805f9b34fb
 
 There's so many things you can explore about how MI Band device connect and communicate with your Android device using Bluetooth connection, you can also connect and pairing to device programmatically, but in this simple project, I didn't include pairing code so you must pair your Mi band device first using My Fit application then connect it programmatically (just clone this project to see the example).
+
+HOW TO USE:
+1. pair with Mi Fit
+2. Make sure it is discoverable
+2. Make sure nRF connect is also connected
+3. Tri the mi-ban-2-trial
