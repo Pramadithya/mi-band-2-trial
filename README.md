@@ -30,3 +30,8 @@ HOW TO USE:
 2. Make sure it is discoverable
 2. Make sure nRF connect is also connected
 3. Tri the mi-ban-2-trial
+
+byte[] data = characteristic.getValue();
+txtByte.setText(Arrays.toString(data));
+>> String heartRateMeasured = Arrays.toString(data)
+int heartRateSend = Integer.parseInt(heartRateMeasured);
