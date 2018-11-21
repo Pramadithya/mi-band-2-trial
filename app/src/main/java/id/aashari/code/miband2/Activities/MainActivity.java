@@ -18,9 +18,11 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
+import android.text.format.Formatter;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -47,6 +49,8 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import static android.support.constraint.Constraints.TAG;
+
 public class MainActivity extends Activity {
 
 
@@ -60,15 +64,16 @@ public class MainActivity extends Activity {
 
     Button btnStartConnecting, btnGetBatteryInfo, btnGetHeartRate, btnWalkingInfo, btnStartVibrate, btnStopVibrate;
     EditText txtPhysicalAddress;
-    TextView txtState, txtByte;
+    TextView txtState, txtByte, showmyIP;
     private String mDeviceName;
     private String mDeviceAddress;
 
     private static Socket s;
     private static InputStreamReader isr;
     private static BufferedReader br;
-    private static String ip_server = "192.168.3.186";//
+    private static String ip_server = "192.168.43.13";//Server IP Address
     private static PrintWriter printWriter;
+    private static String my_IP;//local IP Address
 
     private LocationManager locationManager;
     private LocationListener locationListener;
@@ -103,18 +108,20 @@ public class MainActivity extends Activity {
         getBoundedDevice();
 
         //integration
-        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         locationListener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location)
             {
+
                 latShow = location.getLatitude();
                 longShow = location.getLongitude();
+                Log.v(TAG, latShowStr);
+                Log.v(TAG, longShowStr);
                 latShowStr = Double.toString(latShow);
                 longShowStr = Double.toString(longShow);
-                StrLatLong.append("\nLat = " + latShowStr + "\nLong = " + longShowStr);
 
-                //sendDataToServer();//send gps lat,long, and heart rate to server via tcp
+                StrLatLong.setText("\nLat = " + latShowStr + "\nLong = " + longShowStr);
             }
 
             @Override
@@ -135,6 +142,8 @@ public class MainActivity extends Activity {
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
+
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 60000, 0, locationListener);
 
         mComMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 
@@ -215,6 +224,11 @@ public class MainActivity extends Activity {
         };
         t2.start();//start doing Thread on new activity
 
+        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+        my_IP = Formatter.formatIpAddress(wifiManager.getConnectionInfo().getIpAddress());
+        //showmyIP.setText("My IP Address: " + my_IP);
+
+
     }
 
     @Override
@@ -230,7 +244,6 @@ public class MainActivity extends Activity {
 
     public void sendDataToServer()
     {
-        //StrLatLong.append("\nLat = " + latShowStr + "\nLong = " + longShowStr);
         sendTask st = new sendTask();
         st.execute();
         Toast.makeText(getApplicationContext(), "Data sent : " + heartRateMeasured + "| " + latShowStr + "| " + longShowStr, Toast.LENGTH_LONG).show();
@@ -255,6 +268,8 @@ public class MainActivity extends Activity {
                 printWriter.print(latShow);
                 printWriter.print(mark);
                 printWriter.print(longShow);
+                printWriter.print(mark);
+                printWriter.print(my_IP);
                 //printWriter.write();
                 printWriter.flush();
                 printWriter.close();
@@ -367,6 +382,7 @@ public class MainActivity extends Activity {
         StrLatLong = findViewById(R.id.textView2);
         get_unique_code = findViewById(R.id.get_unique_code_button);
         print_unique_code = findViewById(R.id.unique_code);
+        showmyIP = (TextView) findViewById(R.id.myIPAddress);
     }
 
     void initializeEvents() {
