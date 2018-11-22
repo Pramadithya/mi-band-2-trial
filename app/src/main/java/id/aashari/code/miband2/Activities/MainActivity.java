@@ -1,5 +1,6 @@
 package id.aashari.code.miband2.Activities;
 
+import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -48,13 +49,18 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
 
+import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.support.constraint.Constraints.TAG;
 
 public class MainActivity extends Activity {
 
 
     Boolean isListeningHeartRate = false;
+    private FusedLocationProviderClient client;
 
     public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
     public static final String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
@@ -71,7 +77,7 @@ public class MainActivity extends Activity {
     private static Socket s;
     private static InputStreamReader isr;
     private static BufferedReader br;
-    private static String ip_server = "192.168.43.13";//Server IP Address
+    private static String ip_server = "192.168.137.246";//Server IP Address, utk Tracker.v1 = 192.168.137.246 , ip hksangkuriang = 192.168.3.186
     private static PrintWriter printWriter;
     private static String my_IP;//local IP Address
 
@@ -108,49 +114,16 @@ public class MainActivity extends Activity {
         getBoundedDevice();
 
         //integration
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        locationListener = new LocationListener() {
-            @Override
-            public void onLocationChanged(Location location)
-            {
-
-                latShow = location.getLatitude();
-                longShow = location.getLongitude();
-                Log.v(TAG, latShowStr);
-                Log.v(TAG, longShowStr);
-                latShowStr = Double.toString(latShow);
-                longShowStr = Double.toString(longShow);
-
-                StrLatLong.setText("\nLat = " + latShowStr + "\nLong = " + longShowStr);
-            }
-
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
-
-            }
-
-            @Override
-            public void onProviderEnabled(String provider) {
-
-            }
-
-            @Override
-            public void onProviderDisabled(String provider) {
-
-            }
-        };
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 60000, 0, locationListener);
-
         mComMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 
-        mReceiver= new NetworkReceiver();
+        mReceiver = new NetworkReceiver();
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
 
         registerReceiver(mReceiver, filter);
+
+        requestPermission();
+
+        client = LocationServices.getFusedLocationProviderClient(this);
 
         get_unique_code.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -180,18 +153,18 @@ public class MainActivity extends Activity {
         });
 
         //interrupt handling 1
-        Thread t1 = new Thread(){
+        Thread t1 = new Thread() {
             @Override
-            public void run(){
-                while( !isInterrupted() ){
+            public void run() {
+                while (!isInterrupted()) {
                     try {
-                        Thread.sleep(60000);//tiap 120000millis = 120 sekon = 2 menit
+                        Thread.sleep(80000);//tiap 120000millis = 120 sekon = 2 menit
 
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
                                 //startScanHeartRate();
-                                sendDataToServer();//send data here every 120000 ms
+                                sendDataToServer();
                             }
                         });
                     } catch (InterruptedException e) {
@@ -203,17 +176,18 @@ public class MainActivity extends Activity {
         t1.start();//start doing Thread on new activity
 
         //interrupt handling 2
-        Thread t2 = new Thread(){
+        Thread t2 = new Thread() {
             @Override
-            public void run(){
-                while( !isInterrupted() ){
+            public void run() {
+                while (!isInterrupted()) {
                     try {
-                        Thread.sleep(40000);//tiap 60000millis = 60 sekon = 1 menit
+                        Thread.sleep(60000);//tiap 45000millis = 45 sekon
 
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
                                 startScanHeartRate();
+                                getLatLong();
                             }
                         });
                     } catch (InterruptedException e) {
@@ -229,6 +203,30 @@ public class MainActivity extends Activity {
         //showmyIP.setText("My IP Address: " + my_IP);
 
 
+    }
+    private void getLatLong() {
+        if (ActivityCompat.checkSelfPermission(MainActivity.this, ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+            return;
+        }
+        client.getLastLocation().addOnSuccessListener(MainActivity.this, new OnSuccessListener<Location>() {
+            @Override
+            public void onSuccess(Location location) {
+                if ( location != null ){
+                    latShow = location.getLatitude();
+                    longShow = location.getLongitude();
+                    latShowStr = Double.toString(latShow);
+                    longShowStr = Double.toString(longShow);
+                    //textView.setText(latStr + longStr);
+                    //System.out.println(hitung);
+                    //textView.setText(location.toString());
+                }
+            }
+        });
+    }
+
+    private void requestPermission(){
+        ActivityCompat.requestPermissions(this, new String[]{ACCESS_FINE_LOCATION}, 1);
     }
 
     @Override
@@ -261,15 +259,13 @@ public class MainActivity extends Activity {
                 longShowStr = Double.toString(longShow);
 
                 printWriter = new PrintWriter(s.getOutputStream());
-                printWriter.print(netID);
+                printWriter.print(my_IP);
                 printWriter.print(mark);
                 printWriter.print(heartRateMeasured);
                 printWriter.print(mark);
                 printWriter.print(latShow);
                 printWriter.print(mark);
                 printWriter.print(longShow);
-                printWriter.print(mark);
-                printWriter.print(my_IP);
                 //printWriter.write();
                 printWriter.flush();
                 printWriter.close();
