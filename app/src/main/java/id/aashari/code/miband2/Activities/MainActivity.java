@@ -77,17 +77,17 @@ public class MainActivity extends Activity {
     private static Socket s;
     private static InputStreamReader isr;
     private static BufferedReader br;
-    private static String ip_server = "192.168.137.246";//Server IP Address, utk Tracker.v1 = 192.168.137.246 , ip hksangkuriang = 192.168.3.186
+    private static String ip_server = "192.168.137.246`";//Server IP Address, utk Tracker.v1 = 192.168.137.246 , ip hksangkuriang = 192.168.3.186
     private static PrintWriter printWriter;
     private static String my_IP;//local IP Address
 
     private LocationManager locationManager;
     private LocationListener locationListener;
     private TextView StrLatLong;
-    double latShow = -6.8880713;
-    double longShow = 107.6117433;
-    String latShowStr;
-    String longShowStr;
+    double latShow;
+    double longShow;
+    String latShowStr = "-6.8880713";//""
+    String longShowStr = "107.6117433";//
 
     private ConnectivityManager mComMgr;
     public NetworkReceiver mReceiver;
@@ -158,7 +158,7 @@ public class MainActivity extends Activity {
             public void run() {
                 while (!isInterrupted()) {
                     try {
-                        Thread.sleep(80000);//tiap 120000millis = 120 sekon = 2 menit
+                        Thread.sleep(5000);//tiap 120000millis = 120 sekon = 2 menit
 
                         runOnUiThread(new Runnable() {
                             @Override
@@ -181,7 +181,7 @@ public class MainActivity extends Activity {
             public void run() {
                 while (!isInterrupted()) {
                     try {
-                        Thread.sleep(60000);//tiap 45000millis = 45 sekon
+                        Thread.sleep(20000);//tiap 45000millis = 45 sekon
 
                         runOnUiThread(new Runnable() {
                             @Override
@@ -244,7 +244,7 @@ public class MainActivity extends Activity {
     {
         sendTask st = new sendTask();
         st.execute();
-        Toast.makeText(getApplicationContext(), "Data sent : " + heartRateMeasured + "| " + latShowStr + "| " + longShowStr, Toast.LENGTH_LONG).show();
+        Toast.makeText(getApplicationContext(), "Data sent : " + heartRateMeasured + "| " + latShowStr + "| " + longShowStr, Toast.LENGTH_SHORT).show();
     }
 
     public class sendTask extends AsyncTask<Void, Void, Void>//Section to send data via TCP
